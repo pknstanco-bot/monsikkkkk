@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Monitoring Per Pegawai – MONSIK{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mt-4 mb-4 gap-3">
+  <div>
+    <h4 class="fw-bold mb-1 text-dark">Monitoring Perjalanan Dinas Per Pegawai</h4>
+    <p class="text-muted small mb-0">Statistik frekuensi penugasan, uang harian flat, dan rincian nominal telah cair serta belum cair per pegawai.</p>
+  </div>
+  <a href="{{ url_for('export.excel_peserta') }}" class="btn btn-outline-secondary btn-sm bg-white shadow-sm">
+    <i class="bi bi-file-earmark-excel text-success me-1"></i> Export Rekap Excel
+  </a>
+</div>
+
+<!-- Search Bar -->
+<div class="card card-monsik mb-4">
+  <div class="card-monsik-body p-3">
+    <form method="GET" action="{{ url_for('monitoring.pegawai') }}" class="row g-2">
+      <div class="col-md-9">
+        <div class="input-group input-group-sm">
+          <span class="input-group-text bg-light"><i class="bi bi-search text-muted"></i></span>
+          <input type="text" name="q" class="form-control" placeholder="Cari nama pegawai, NIP, atau jabatan..." value="{{ search or '' }}">
+        </div>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-primary flex-fill">Cari Pegawai</button>
+        <a href="{{ url_for('monitoring.pegawai') }}" class="btn btn-sm btn-light border">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Summary Card Per Pegawai Table -->
+<div class="card card-monsik mb-4">
+  <div class="card-monsik-header">
+    <h5 class="card-title-monsik">Rekapitulasi Akumulasi Per Pegawai</h5>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-monsik align-middle mb-0">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Pegawai &amp; NIP</th>
+          <th>Jabatan / Golongan</th>
+          <th class="text-center">Total Penugasan (ST)</th>
+          <th class="text-end">Total Uang Harian</th>
+          <th class="text-end">Telah Cair</th>
+          <th class="text-end">Nominal Belum Cair</th>
+          <th class="text-end">Total Biaya Diterima</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pegawai_summary %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            <div class="fw-bold text-dark">{{ p.nama_pegawai }}</div>
+            <small class="text-muted">NIP: {{ p.nip or '-' }}</small>
+          </td>
+          <td>
+            <div>{{ p.jabatan or '-' }}</div>
+            <small class="text-muted">Gol: {{ p.golongan or '-' }}</small>
+          </td>
+          <td class="text-center">
+            <span class="badge bg-primary px-3 py-1">{{ p.total_st }} ST</span>
+          </td>
+          <td class="text-end fw-semibold text-primary">
+            {{ p.total_uh|rupiah }}
+          </td>
+          <td class="text-end fw-semibold text-success">
+            {{ p.total_cair|rupiah }}
+          </td>
+          <td class="text-end fw-semibold text-warning">
+            {{ p.total_belum_cair|rupiah }}
+          </td>
+          <td class="text-end fw-bold text-dark fs-6">
+            {{ p.total_biaya|rupiah }}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="8" class="text-center py-4 text-muted">
+            Tidak ditemukan data pegawai.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

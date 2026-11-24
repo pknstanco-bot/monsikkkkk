@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Pencairan SIK / SPD – MONSIK{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mt-4 mb-4 gap-3">
+  <div>
+    <h4 class="fw-bold mb-1 text-dark">Manajemen Pencairan SIK & SPD</h4>
+    <p class="text-muted small mb-0">Monitoring status pencairan (Outstanding vs Cair Sebagian & Penuh) dan pencatatan nomor SP2D/Kwitansi.</p>
+  </div>
+</div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-pills mb-4 gap-2">
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'semua' %}active{% else %}bg-white border text-dark{% endif %}" href="{{ url_for('pencairan.index', tab='semua') }}">
+      <i class="bi bi-grid-fill me-1"></i> Semua Pengajuan
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'outstanding' %}active btn-danger text-white{% else %}bg-white border text-danger{% endif %}" href="{{ url_for('pencairan.index', tab='outstanding') }}">
+      <i class="bi bi-hourglass-split me-1"></i> SIK/SPD Outstanding (Belum Cair)
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if active_tab == 'cair' %}active btn-success text-white{% else %}bg-white border text-success{% endif %}" href="{{ url_for('pencairan.index', tab='cair') }}">
+      <i class="bi bi-check-circle-fill me-1"></i> SIK/SPD Telah Cair
+    </a>
+  </li>
+</ul>
+
+<div class="row g-4">
+  <!-- Daftar ST untuk Pencairan -->
+  <div class="col-lg-8">
+    <div class="card card-monsik">
+      <div class="card-monsik-header">
+        <h5 class="card-title-monsik">Daftar SIK & SPD ({{ st_list|length }} Data)</h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-monsik align-middle mb-0">
+          <thead>
+            <tr>
+              <th>Nomor ST</th>
+              <th>Kota & Maksud</th>
+              <th class="text-end">{% if current_user.role == 'PEGAWAI' %}Uang Harian / Hak Anda{% else %}Anggaran{% endif %}</th>
+              <th class="text-end">Telah Cair</th>
+              <th class="text-center">Status</th>
+              <th class="text-end">{% if current_user.is_bendahara %}Aksi Bendahara{% else %}Aksi{% endif %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for st in st_list %}
+            <tr>
+              <td>
+                <div class="fw-bold text-dark">{{ st.nomor_st }}</div>
+                <small class="text-muted">{{ st.nomor_spd or '-' }}</small>
+              </td>
+              <td style="max-width: 200px;">
+                <div class="fw-medium text-truncate">{{ st.kota_tujuan }}</div>
+                <small class="text-muted text-truncate d-block">{{ st.maksud_tugas }}</small>
+              </td>
+              <td class="text-end fw-bold text-dark">
+                {{ st.get_anggaran_for_user(current_user)|rupiah }}
+              </td>
+              <td class="text-end fw-bold text-success">
+                {{ st.get_cair_for_user(current_user)|rupiah }}
+              </td>
+              <td class="text-center">
+                {% if st.status_pencairan == 'CAIR_PENUH' %}
+                  <span class="badge-status badge-cair-penuh">Penuh</span>
+                {% elif st.status_pencairan == 'CAIR_SEBAGIAN' %}
+                  <span class="badge-status badge-cair-sebagian">Sebagian</span>
+                {% else %}
+                  <span class="badge-status badge-outstanding">Outstanding</span>
+                {% endif %}
+              </td>
+              <td class="text-end">
+                {% if current_user.is_bendahara %}
+                <a href="{{ url_for('surat_tugas.detail', id=st.id) }}" class="btn btn-sm btn-primary">
+                  <i class="bi bi-cash-stack me-1"></i> Detail &amp; Cairkan
+                </a>
+                {% else %}
+                <a href="{{ url_for('surat_tugas.detail', id=st.id) }}" class="btn btn-sm btn-light border">
+                  <i class="bi bi-eye me-1"></i> Detail ST
+                </a>
+                {% endif %}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="6" class="text-center py-4 text-muted">
+                Tidak ada data pada kategori ini.
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Riwayat Transaksi SP2D Terakhir -->
+  <div class="col-lg-4">
+    <div class="card card-monsik">
+      <div class="card-monsik-header">
+        <h5 class="card-title-monsik"><i class="bi bi-clock-history text-primary me-2"></i>Riwayat Transaksi Cair</h5>
+      </div>
+      <div class="card-monsik-body p-0">
+        <ul class="list-group list-group-flush small">
+          {% for r in pencairan_riwayat %}
+          <li class="list-group-item p-3">
+            <div class="d-flex justify-content-between align-items-center">
+              <span class="fw-bold text-dark">{{ r.nomor_sp2d_kwitansi }}</span>
+              <span class="badge bg-success">{{ r.jenis_pencairan }}</span>
+            </div>
+            <div class="fs-6 fw-bold text-success my-1">{{ r.jumlah_cair|rupiah }}</div>
+            <div class="small text-muted">
+              ST: <strong>{{ r.surat_tugas.nomor_st }}</strong>
+            </div>
+            <div class="small text-muted">
+              Tgl: {{ r.tanggal_cair|tanggal }} &bull; Oleh: {{ r.bendahara.nama_lengkap if r.bendahara else 'Bendahara' }}
+            </div>
+          </li>
+          {% else %}
+          <li class="list-group-item p-4 text-center text-muted">
+            Belum ada riwayat transaksi pencairan.
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

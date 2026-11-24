@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+
+{% block title %}Masuk ke MONSIK{% endblock %}
+
+{% block content %}
+<style>
+/* Outer Page Background */
+body {
+  background-color: #f1f5f9 !important;
+}
+.login-page-container {
+  min-height: calc(100vh - 120px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+/* Main Card - Matching Reference Split Layout */
+.login-card {
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 12px 48px rgba(15, 23, 42, 0.08);
+  width: 100%;
+  max-width: 980px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: row;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+}
+/* Left Banner - Navy Blue Gradient like MONSIK Original */
+.login-banner-left {
+  flex: 1.05;
+  background: linear-gradient(145deg, #091336 0%, #102a71 50%, #1e40af 100%);
+  border-radius: 22px;
+  margin: 14px;
+  padding: 3rem 2.5rem;
+  color: #ffffff;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.banner-circle-1 {
+  position: absolute;
+  top: -60px;
+  right: -60px;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.25) 0%, rgba(255, 255, 255, 0) 70%);
+}
+.banner-circle-2 {
+  position: absolute;
+  bottom: -40px;
+  left: -40px;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.15) 0%, rgba(255, 255, 255, 0) 70%);
+}
+/* Right Form Container */
+.login-form-right {
+  flex: 1.1;
+  padding: 3rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+@media (max-width: 991.98px) {
+  .login-card {
+    flex-direction: column;
+    max-width: 480px;
+  }
+  .login-banner-left {
+    margin: 12px 12px 0 12px;
+    padding: 2rem 1.5rem;
+  }
+  .login-form-right {
+    padding: 2rem 1.5rem;
+  }
+}
+</style>
+
+<div class="login-page-container">
+  <div class="login-card">
+
+    <!-- LEFT PANEL: Deep Navy Brand Banner (like reference image card-in-card) -->
+    <div class="login-banner-left">
+      <div class="banner-circle-1"></div>
+      <div class="banner-circle-2"></div>
+
+      <!-- Top Headline -->
+      <div style="position: relative; z-index: 2;">
+        <h2 class="fw-bold mb-3" style="font-size: 2rem; line-height: 1.25; letter-spacing: -0.02em;">
+          Monitoring SIK &amp; SPD Terpadu.
+        </h2>
+        <p style="font-size: 0.92rem; color: rgba(226, 232, 240, 0.85); line-height: 1.6; max-width: 340px;">
+          Sistem Pengawasan Perjalanan Dinas, Kelengkapan Laporan Geotagging, dan Realisasi Anggaran.
+        </p>
+      </div>
+
+      <!-- Center Logo / Graphic -->
+      <div class="text-center my-4 py-2" style="position: relative; z-index: 2;">
+        <img src="{{ url_for('static', filename='img/monsik_logo.png') }}" alt="MONSIK Logo"
+             style="width: 130px; height: 130px; object-fit: contain; filter: drop-shadow(0 12px 24px rgba(0,0,0,0.35)); transition: transform 0.3s ease;">
+      </div>
+
+      <!-- Bottom Tagline -->
+      <div style="position: relative; z-index: 2;">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="badge bg-white bg-opacity-20 text-white px-2 py-1" style="font-size: 0.72rem; font-weight: 500;">
+            <i class="bi bi-shield-check me-1 text-info"></i> SIK Dalam Kota &amp; SPD Luar Kota
+          </span>
+        </div>
+        <small style="font-size: 0.74rem; color: rgba(203, 213, 225, 0.7);">
+          KPP Pratama Jakarta Kembangan
+        </small>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Clean Form with Navy Button -->
+    <div class="login-form-right">
+
+      <!-- Top Brand Icon & Name -->
+      <div class="d-flex align-items-center gap-2 mb-4">
+        <div class="d-flex align-items-center justify-content-center rounded-3"
+             style="width: 36px; height: 36px; background: linear-gradient(135deg, #091336, #1e40af);">
+          <img src="{{ url_for('static', filename='img/monsik_logo.png') }}" alt="Icon" style="width: 22px; height: 22px; object-fit: contain;">
+        </div>
+        <span class="fw-bold fs-5" style="color: #091336; letter-spacing: 0.04em;">MONSIK</span>
+      </div>
+
+      <!-- Headline -->
+      <div class="mb-4">
+        <h3 class="fw-bold mb-1" style="color: #0f172a; font-size: 1.65rem; letter-spacing: -0.02em;">
+          Masuk ke Akun Anda
+        </h3>
+        <p class="text-muted small mb-0">
+          Silakan masukkan NIP atau username Anda untuk melanjutkan
+        </p>
+      </div>
+
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'danger' if category == 'danger' else 'success' }} alert-dismissible fade show py-2 px-3 small mb-3 border-0 shadow-sm" role="alert">
+              <i class="bi bi-info-circle me-1"></i> {{ message }}
+              <button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+            </div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <!-- Form -->
+      <form method="POST" action="{{ url_for('auth.login') }}">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold" style="color: #475569;">Username / NIP Pegawai</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0 text-muted" style="border-radius: 10px 0 0 10px;">
+              <i class="bi bi-person"></i>
+            </span>
+            <input type="text" name="username" class="form-control bg-light border-start-0 ps-1"
+                   placeholder="Username atau 18 digit NIP" required autofocus
+                   style="border-radius: 0 10px 10px 0; font-size: 0.9rem; padding: 0.65rem 0.75rem;">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-semibold" style="color: #475569;">Password</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0 text-muted" style="border-radius: 10px 0 0 10px;">
+              <i class="bi bi-lock"></i>
+            </span>
+            <input type="password" id="loginPasswordInput" name="password" class="form-control bg-light border-start-0 border-end-0 ps-1"
+                   placeholder="Password (Pegawai: 123456)" required
+                   style="font-size: 0.9rem; padding: 0.65rem 0.75rem;">
+            <button type="button" class="input-group-text bg-light border-start-0 text-muted"
+                    id="btnTogglePassword" style="border-radius: 0 10px 10px 0; cursor: pointer;"
+                    title="Tampilkan / Sembunyikan Password">
+              <i class="bi bi-eye" id="togglePasswordIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between mb-4">
+          <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="remember" name="remember" style="cursor: pointer;">
+            <label class="form-check-label small text-muted" for="remember" style="cursor: pointer;">
+              Ingat sesi saya
+            </label>
+          </div>
+        </div>
+
+        <div class="d-grid mb-3">
+          <button type="submit" class="btn btn-lg fw-semibold shadow-sm"
+                  style="background: linear-gradient(135deg, #091336 0%, #1e40af 100%); color: #ffffff; border: none; border-radius: 10px; padding: 0.72rem; font-size: 0.95rem;">
+            <i class="bi bi-box-arrow-in-right me-1"></i> Masuk Sekarang
+          </button>
+        </div>
+      </form>
+
+      <!-- Copyright -->
+      <div class="text-center mt-auto pt-3" style="font-size: 0.72rem; color: #94a3b8;">
+        &copy; 2026 MONSIK &mdash; Tim Keuangan KPP Pratama Jakarta Kembangan
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var btn = document.getElementById('btnTogglePassword');
+  var inp = document.getElementById('loginPasswordInput');
+  var ico = document.getElementById('togglePasswordIcon');
+  if (btn && inp && ico) {
+    btn.addEventListener('click', function() {
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        ico.className = 'bi bi-eye-slash';
+      } else {
+        inp.type = 'password';
+        ico.className = 'bi bi-eye';
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

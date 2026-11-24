@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}Arsip Dokumen DNPD – MONSIK{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mt-4 mb-4 gap-3">
+  <div>
+    <h4 class="fw-bold mb-1 text-dark">Arsip Dokumen DNPD (Daftar Nominatif Perjalanan Dinas)</h4>
+    <p class="text-muted small mb-0">Manajemen berkas digital DNPD per Surat Tugas. Dokumen tersimpan permanen di <code>storage/dnpd/</code>.</p>
+  </div>
+</div>
+
+<!-- Stats Header -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card card-monsik p-3 mb-0">
+      <div class="small text-muted fw-bold">TOTAL SURAT TUGAS</div>
+      <div class="fs-4 fw-bold text-dark mt-1">{{ total_st }} Dokumen</div>
+      <small class="text-muted">Target pengarsipan</small>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card card-monsik p-3 mb-0">
+      <div class="small text-success fw-bold">DNPD TERARSIP</div>
+      <div class="fs-4 fw-bold text-success mt-1">{{ total_dnpd_ada }} Berkas</div>
+      <small class="text-muted">Siap diunduh / dipreview</small>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card card-monsik p-3 mb-0">
+      <div class="small text-warning fw-bold">BELUM UPLOAD DNPD</div>
+      <div class="fs-4 fw-bold text-warning mt-1">{{ total_dnpd_belum }} ST</div>
+      <small class="text-muted">Menunggu berkas dari pelaksana</small>
+    </div>
+  </div>
+</div>
+
+<!-- Filter & Search -->
+<div class="card card-monsik mb-4">
+  <div class="card-monsik-body p-3">
+    <form method="GET" action="{{ url_for('dnpd.arsip') }}" class="row g-2">
+      <div class="col-md-6">
+        <input type="text" name="q" class="form-control form-control-sm" placeholder="Cari nomor ST, nama file DNPD, atau tujuan..." value="{{ search or '' }}">
+      </div>
+      <div class="col-md-4">
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="">-- Semua Berkas --</option>
+          <option value="ada" {% if status_doc == 'ada' %}selected{% endif %}>Sudah Ada File DNPD</option>
+          <option value="belum" {% if status_doc == 'belum' %}selected{% endif %}>Belum Ada File DNPD</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button type="submit" class="btn btn-sm btn-primary w-100">Filter</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Table List -->
+<div class="card card-monsik">
+  <div class="table-responsive">
+    <table class="table table-monsik align-middle mb-0">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nomor Surat Tugas</th>
+          <th>Maksud & Kota Tujuan</th>
+          <th>Nama Berkas DNPD</th>
+          <th>Tanggal & Pengunggah</th>
+          <th class="text-center">Status Berkas</th>
+          <th class="text-end">Aksi Dokumen</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for st in st_list %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            <a href="{{ url_for('surat_tugas.detail', id=st.id) }}" class="fw-bold text-primary text-decoration-none">
+              {{ st.nomor_st }}
+            </a>
+            <div class="small text-muted">{{ st.nomor_spd or '-' }}</div>
+          </td>
+          <td style="max-width: 250px;">
+            <div class="fw-semibold text-truncate">{{ st.kota_tujuan }}</div>
+            <small class="text-muted text-truncate d-block">{{ st.maksud_tugas }}</small>
+          </td>
+          <td>
+            {% if st.dnpd_filename %}
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi bi-file-earmark-check-fill fs-4 text-success"></i>
+                <div class="text-truncate" style="max-width: 200px;">
+                  <div class="fw-bold text-dark small">{{ st.dnpd_original_name }}</div>
+                  <small class="text-muted d-block" style="font-size: 0.7rem;">storage/dnpd/{{ st.dnpd_filename }}</small>
+                </div>
+              </div>
+            {% else %}
+              <span class="text-muted small fst-italic">Belum ada berkas DNPD</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if st.dnpd_uploaded_at %}
+              <div>{{ st.dnpd_uploaded_at|tanggal }}</div>
+              <small class="text-muted">Oleh: {{ st.dnpd_uploaded_by or '-' }}</small>
+            {% else %}
+              <span class="text-muted">-</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if st.dnpd_filename %}
+              <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-3 py-1">
+                <i class="bi bi-check-circle-fill me-1"></i> Tersedia
+              </span>
+            {% else %}
+              <span class="badge bg-warning bg-opacity-10 text-warning border border-warning-subtle px-3 py-1">
+                <i class="bi bi-exclamation-circle-fill me-1"></i> Belum Upload
+              </span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <div class="d-inline-flex gap-1">
+              {% if st.dnpd_filename %}
+                <a href="{{ url_for('dnpd.download', st_id=st.id) }}" class="btn btn-sm btn-success" title="Download">
+                  <i class="bi bi-download"></i>
+                </a>
+                <a href="{{ url_for('dnpd.preview', st_id=st.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary bg-white" title="Preview">
+                  <i class="bi bi-eye"></i>
+                </a>
+                {% if current_user.is_bendahara %}
+                <form method="POST" action="{{ url_for('dnpd.delete', st_id=st.id) }}" class="d-inline" onsubmit="return confirm('Hapus berkas DNPD ini?');">
+                  <button type="submit" class="btn btn-sm btn-outline-danger" title="Hapus Berkas"><i class="bi bi-trash"></i></button>
+                </form>
+                {% endif %}
+              {% endif %}
+              <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalUpload{{ st.id }}" title="Upload/Ganti">
+                <i class="bi bi-upload"></i> {% if st.dnpd_filename %}Ganti{% else %}Upload{% endif %}
+              </button>
+            </div>
+
+            <!-- Modal Upload DNPD Per ST -->
+            <div class="modal fade" id="modalUpload{{ st.id }}" tabindex="-1">
+              <div class="modal-dialog">
+                <div class="modal-content text-start">
+                  <form method="POST" action="{{ url_for('dnpd.upload', st_id=st.id) }}" enctype="multipart/form-data">
+                    <div class="modal-header">
+                      <h5 class="modal-title fw-bold">Upload Dokumen DNPD: {{ st.nomor_st }}</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <p class="small text-muted mb-3">Pilih dokumen berkas Daftar Nominatif Perjalanan Dinas (PDF, Word, Excel, Gambar). File akan disimpan permanen di <code>storage/dnpd/</code>.</p>
+                      <input type="file" name="dnpd_file" class="form-control mb-3" required>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                      <button type="submit" class="btn btn-primary fw-semibold">Unggah & Simpan</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

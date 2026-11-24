@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Buat Surat Tugas Baru – MONSIK{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center justify-content-between mt-4 mb-3">
+  <div>
+    <h4 class="fw-bold mb-1 text-dark">Buat Surat Tugas Baru (SIK & SPD)</h4>
+    <p class="text-muted small mb-0">Input rincian penugasan dinas dan banyak peserta beserta rincian uang harian.</p>
+  </div>
+  <a href="{{ url_for('surat_tugas.index') }}" class="btn btn-light border btn-sm">
+    <i class="bi bi-arrow-left me-1"></i> Kembali ke Daftar
+  </a>
+</div>
+
+<form method="POST" action="{{ url_for('surat_tugas.create') }}" enctype="multipart/form-data" id="stForm">
+  <!-- Card 1: Data Pokok Surat Tugas -->
+  <div class="card card-monsik mb-4">
+    <div class="card-monsik-header bg-light">
+      <h5 class="card-title-monsik"><i class="bi bi-card-heading text-primary me-2"></i>Informasi Pokok Surat Tugas</h5>
+    </div>
+    <div class="card-monsik-body">
+      <div class="row g-3">
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Nomor Surat Tugas (ST) <span class="text-danger">*</span></label>
+          <input type="text" name="nomor_st" class="form-control form-control-sm" placeholder="Contoh: ST/045/KUG/III/2026" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Nomor SPD</label>
+          <input type="text" name="nomor_spd" class="form-control form-control-sm" placeholder="Otomatis diisi jika kosong">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Tanggal Surat Tugas <span class="text-danger">*</span></label>
+          <input type="date" name="tanggal_st" class="form-control form-control-sm" required>
+        </div>
+
+        <div class="col-md-12">
+          <label class="form-label small fw-bold">Maksud Perjalanan Dinas / Kegiatan <span class="text-danger">*</span></label>
+          <textarea name="maksud_tugas" class="form-control form-control-sm" rows="2" placeholder="Jelaskan maksud dan keperluan dinas..." required></textarea>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Kota / Daerah Tujuan <span class="text-danger">*</span></label>
+          <input type="text" name="kota_tujuan" class="form-control form-control-sm" placeholder="Contoh: Jakarta / Surabaya / Bandung" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Tempat Tujuan Spesifik <span class="text-danger">*</span></label>
+          <input type="text" name="tempat_tujuan" class="form-control form-control-sm" placeholder="Contoh: Gedung Ditjen Anggaran" required>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Mata Anggaran / Akun</label>
+          <input type="text" name="akun_anggaran" class="form-control form-control-sm" value="524111 (Belanja Perjalanan Dinas Biasa)">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Tanggal Berangkat <span class="text-danger">*</span></label>
+          <input type="date" name="tanggal_berangkat" id="tgl_berangkat" class="form-control form-control-sm" required onchange="hitungJumlahHari()">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Tanggal Kembali <span class="text-danger">*</span></label>
+          <input type="date" name="tanggal_kembali" id="tgl_kembali" class="form-control form-control-sm" required onchange="hitungJumlahHari()">
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label small fw-bold">Durasi (Jumlah Hari)</label>
+          <input type="number" id="jumlah_hari" class="form-control form-control-sm bg-light fw-bold" value="1" readonly>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2: Input Banyak Peserta dalam 1 ST -->
+  <div class="card card-monsik mb-4">
+    <div class="card-monsik-header bg-light d-flex justify-content-between align-items-center">
+      <div>
+        <h5 class="card-title-monsik"><i class="bi bi-people-fill text-success me-2"></i>Daftar Peserta & Biaya Riil (Multi-Peserta)</h5>
+        <small class="text-muted">Masukkan seluruh pegawai yang ditugaskan beserta komponen uang harian dan transport.</small>
+      </div>
+      <button type="button" class="btn btn-sm btn-success" onclick="tambahPeserta()">
+        <i class="bi bi-person-plus-fill me-1"></i> Tambah Peserta
+      </button>
+    </div>
+
+    <div class="card-monsik-body p-0">
+      <div class="table-responsive">
+        <table class="table table-bordered align-middle mb-0" id="tabelPeserta">
+          <thead class="table-light small">
+            <tr>
+              <th style="width: 25%;">Nama Pegawai & NIP</th>
+              <th style="width: 15%;">Golongan & Jabatan</th>
+              <th style="width: 10%;">Peran</th>
+              <th style="width: 15%;">Uang Harian/Hari (Rp)</th>
+              <th style="width: 12%;">Transport (Rp)</th>
+              <th style="width: 12%;">Penginapan (Rp)</th>
+              <th style="width: 11%;">Total (Rp)</th>
+              <th style="width: 50px;">Aksi</th>
+            </tr>
+          </thead>
+          <tbody id="pesertaContainer">
+            <!-- Row 1 Default -->
+            <tr class="peserta-row">
+              <td>
+                <input type="text" name="peserta_nama[]" class="form-control form-control-sm mb-1 fw-semibold" placeholder="Nama Lengkap Pegawai" required list="pegawaiPreset">
+                <input type="text" name="peserta_nip[]" class="form-control form-control-sm text-muted" placeholder="NIP (18 Digit)">
+              </td>
+              <td>
+                <input type="text" name="peserta_gol[]" class="form-control form-control-sm mb-1" placeholder="Gol: III/c">
+                <input type="text" name="peserta_jabatan[]" class="form-control form-control-sm" placeholder="Jabatan">
+              </td>
+              <td>
+                <select name="peserta_peran[]" class="form-select form-select-sm">
+                  <option value="Ketua Tim">Ketua Tim</option>
+                  <option value="Anggota" selected>Anggota</option>
+                  <option value="Pengemudi">Pengemudi</option>
+                </select>
+              </td>
+              <td>
+                <input type="number" name="peserta_uang_harian[]" class="form-control form-control-sm input-uang-harian" value="430000" step="5000" oninput="window.recalculateTotals()">
+                <div class="small text-muted mt-1">Subtotal UH: <span class="peserta-subtotal-uh fw-semibold text-primary">Rp 430.000</span></div>
+              </td>
+              <td>
+                <input type="number" name="peserta_transport[]" class="form-control form-control-sm input-transport" value="0" step="10000" oninput="window.recalculateTotals()">
+              </td>
+              <td>
+                <input type="number" name="peserta_penginapan[]" class="form-control form-control-sm input-penginapan" value="0" step="10000" oninput="window.recalculateTotals()">
+                <input type="hidden" name="peserta_lain[]" class="input-lain" value="0">
+              </td>
+              <td class="text-end fw-bold text-dark">
+                <span class="peserta-total-biaya">Rp 430.000</span>
+              </td>
+              <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm p-1" onclick="hapusPeserta(this)" title="Hapus"><i class="bi bi-trash"></i></button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Grand Total Bar -->
+      <div class="bg-light p-3 d-flex justify-content-between align-items-center border-top">
+        <span class="fw-bold text-dark fs-6">Grand Total Anggaran SIK/SPD:</span>
+        <span class="fw-bold text-primary fs-5" id="grand-total-anggaran">Rp 430.000</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: Upload Dokumen DNPD -->
+  <div class="card card-monsik mb-4">
+    <div class="card-monsik-header bg-light">
+      <h5 class="card-title-monsik"><i class="bi bi-file-earmark-arrow-up text-info me-2"></i>Upload Berkas DNPD (Daftar Nominatif)</h5>
+    </div>
+    <div class="card-monsik-body">
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Pilih Berkas DNPD (PDF / Excel / Word / Gambar)</label>
+          <input type="file" name="dnpd_file" class="form-control form-control-sm" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg">
+          <small class="text-muted">Dokumen akan disimpan permanen di folder <code>storage/dnpd/</code>.</small>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label small fw-bold">Catatan / Keterangan Tambahan</label>
+          <input type="text" name="catatan" class="form-control form-control-sm" placeholder="Contoh: Menggunakan transportasi kereta eksekutif PP">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mb-5">
+    <a href="{{ url_for('surat_tugas.index') }}" class="btn btn-light border px-4">Batal</a>
+    <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+      <i class="bi bi-check2-circle me-1"></i> Simpan Surat Tugas
+    </button>
+  </div>
+</form>
+
+<!-- Preset Pegawai Datalist -->
+<datalist id="pegawaiPreset">
+  {% for u in users %}
+  <option value="{{ u.nama_lengkap }}">{{ u.nip }} - {{ u.jabatan }}</option>
+  {% endfor %}
+</datalist>
+
+<script>
+function hitungJumlahHari() {
+  const tgl1 = document.getElementById('tgl_berangkat').value;
+  const tgl2 = document.getElementById('tgl_kembali').value;
+  if (tgl1 && tgl2) {
+    const d1 = new Date(tgl1);
+    const d2 = new Date(tgl2);
+    const diffTime = d2 - d1;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+    const jmlHari = diffDays > 0 ? diffDays : 1;
+    document.getElementById('jumlah_hari').value = jmlHari;
+    window.recalculateTotals();
+  }
+}
+
+function tambahPeserta() {
+  const container = document.getElementById('pesertaContainer');
+  const tr = document.createElement('tr');
+  tr.className = 'peserta-row';
+  tr.innerHTML = `
+    <td>
+      <input type="text" name="peserta_nama[]" class="form-control form-control-sm mb-1 fw-semibold" placeholder="Nama Lengkap Pegawai" required list="pegawaiPreset">
+      <input type="text" name="peserta_nip[]" class="form-control form-control-sm text-muted" placeholder="NIP (18 Digit)">
+    </td>
+    <td>
+      <input type="text" name="peserta_gol[]" class="form-control form-control-sm mb-1" placeholder="Gol: III/a">
+      <input type="text" name="peserta_jabatan[]" class="form-control form-control-sm" placeholder="Jabatan">
+    </td>
+    <td>
+      <select name="peserta_peran[]" class="form-select form-select-sm">
+        <option value="Ketua Tim">Ketua Tim</option>
+        <option value="Anggota" selected>Anggota</option>
+        <option value="Pengemudi">Pengemudi</option>
+      </select>
+    </td>
+    <td>
+      <input type="number" name="peserta_uang_harian[]" class="form-control form-control-sm input-uang-harian" value="430000" step="5000" oninput="window.recalculateTotals()">
+      <div class="small text-muted mt-1">Subtotal UH: <span class="peserta-subtotal-uh fw-semibold text-primary">Rp 430.000</span></div>
+    </td>
+    <td>
+      <input type="number" name="peserta_transport[]" class="form-control form-control-sm input-transport" value="0" step="10000" oninput="window.recalculateTotals()">
+    </td>
+    <td>
+      <input type="number" name="peserta_penginapan[]" class="form-control form-control-sm input-penginapan" value="0" step="10000" oninput="window.recalculateTotals()">
+      <input type="hidden" name="peserta_lain[]" class="input-lain" value="0">
+    </td>
+    <td class="text-end fw-bold text-dark">
+      <span class="peserta-total-biaya">Rp 430.000</span>
+    </td>
+    <td class="text-center">
+      <button type="button" class="btn btn-outline-danger btn-sm p-1" onclick="hapusPeserta(this)"><i class="bi bi-trash"></i></button>
+    </td>
+  `;
+  container.appendChild(tr);
+  window.recalculateTotals();
+}
+
+function hapusPeserta(btn) {
+  const rows = document.querySelectorAll('.peserta-row');
+  if (rows.length > 1) {
+    btn.closest('tr').remove();
+    window.recalculateTotals();
+  } else {
+    alert("Surat Tugas wajib memiliki minimal 1 peserta.");
+  }
+}
+</script>
+{% endblock %}

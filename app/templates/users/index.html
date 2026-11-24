@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+
+{% block title %}Kelola Pengguna Sistem – MONSIK{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mt-4 mb-4 gap-3">
+  <div>
+    <h4 class="fw-bold mb-1 text-dark">Manajemen Pengguna & Hak Akses (Role)</h4>
+    <p class="text-muted small mb-0">Kelola akun ADMIN, BENDAHARA, dan PEGAWAI pada sistem MONSIK.</p>
+  </div>
+  <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalTambahUser">
+    <i class="bi bi-person-plus-fill me-1"></i> Tambah Pengguna Baru
+  </button>
+</div>
+
+<div class="card card-monsik">
+  <div class="table-responsive">
+    <table class="table table-monsik align-middle mb-0">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Nama Lengkap & NIP</th>
+          <th>Username</th>
+          <th>Jabatan & Golongan</th>
+          <th class="text-center">Role / Hak Akses</th>
+          <th class="text-center">Status</th>
+          <th class="text-end">Aksi Akun</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in user_list %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            <div class="fw-bold text-dark">{{ u.nama_lengkap }}</div>
+            <small class="text-muted">NIP: {{ u.nip or '-' }}</small>
+          </td>
+          <td>
+            <code>{{ u.username }}</code>
+          </td>
+          <td>
+            <div>{{ u.jabatan or '-' }}</div>
+            <small class="text-muted">Gol: {{ u.golongan or '-' }}</small>
+          </td>
+          <td class="text-center">
+            {% if u.role == 'ADMIN' %}
+              <span class="badge bg-danger px-3 py-1">ADMINISTRATOR</span>
+            {% elif u.role == 'BENDAHARA' %}
+              <span class="badge bg-success px-3 py-1">BENDAHARA</span>
+            {% else %}
+              <span class="badge bg-primary px-3 py-1">PEGAWAI</span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            {% if u.is_active %}
+              <span class="badge bg-success bg-opacity-10 text-success border border-success-subtle px-2 py-1">Aktif</span>
+            {% else %}
+              <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary-subtle px-2 py-1">Non-Aktif</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <div class="d-inline-flex gap-1">
+              <!-- Reset Password Button -->
+              <button type="button" class="btn btn-sm btn-light border" data-bs-toggle="modal" data-bs-target="#modalResetPw{{ u.id }}" title="Reset Password">
+                <i class="bi bi-key text-warning"></i>
+              </button>
+
+              {% if u.id != current_user.id %}
+              <form method="POST" action="{{ url_for('users.toggle_status', id=u.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-light border" title="Aktif/Nonaktifkan">
+                  {% if u.is_active %}
+                    <i class="bi bi-person-x text-danger"></i>
+                  {% else %}
+                    <i class="bi bi-person-check text-success"></i>
+                  {% endif %}
+                </button>
+              </form>
+              {% endif %}
+            </div>
+
+            <!-- Modal Reset Password -->
+            <div class="modal fade" id="modalResetPw{{ u.id }}" tabindex="-1">
+              <div class="modal-dialog">
+                <div class="modal-content text-start">
+                  <form method="POST" action="{{ url_for('users.reset_password', id=u.id) }}">
+                    <div class="modal-header">
+                      <h5 class="modal-title fw-bold">Reset Password: {{ u.username }}</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                      <label class="form-label small fw-bold">Password Baru</label>
+                      <input type="text" name="new_password" class="form-control" value="password123" required>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+                      <button type="submit" class="btn btn-primary">Simpan Password Baru</button>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Modal Tambah User -->
+<div class="modal fade" id="modalTambahUser" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('users.create') }}">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill text-primary me-2"></i>Tambah Pengguna Baru</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Username <span class="text-danger">*</span></label>
+            <input type="text" name="username" class="form-control" required placeholder="Contoh: rudi">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Password <span class="text-danger">*</span></label>
+            <input type="password" name="password" class="form-control" required placeholder="Minimal 6 karakter">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Nama Lengkap & Gelar <span class="text-danger">*</span></label>
+            <input type="text" name="nama_lengkap" class="form-control" required placeholder="Contoh: Rudi Hartono, S.E.">
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">NIP</label>
+            <input type="text" name="nip" class="form-control" placeholder="18 Digit NIP">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Golongan</label>
+              <input type="text" name="golongan" class="form-control" placeholder="Contoh: III/c">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">Hak Akses (Role)</label>
+              <select name="role" class="form-select">
+                <option value="PEGAWAI">PEGAWAI</option>
+                <option value="BENDAHARA">BENDAHARA</option>
+                <option value="ADMIN">ADMINISTRATOR</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Jabatan</label>
+            <input type="text" name="jabatan" class="form-control" placeholder="Contoh: Analis Kepegawaian">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary fw-semibold">Simpan Pengguna</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

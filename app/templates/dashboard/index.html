@@ -1,0 +1,360 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Monitoring SIK & SPD{% endblock %}
+
+{% block header_content %}
+<!-- 4 Top Metric Cards (SIK Outstanding, SPD Outstanding, SIK Cair, SPD Cair) -->
+<div class="row g-3 pt-3">
+  <!-- Card 1: SIK Outstanding -->
+  <div class="col-xl-3 col-md-6">
+    <div class="metric-card-header">
+      <div class="metric-title text-warning">
+        <i class="bi bi-hourglass-split"></i> SIK Outstanding (Dalam Kota)
+      </div>
+      <div class="metric-value text-warning">{{ sik_outstanding|rupiah }}</div>
+      <div class="d-flex align-items-center justify-content-between">
+        <span class="metric-trend trend-down"><i class="bi bi-exclamation-triangle"></i> {{ count_sik_out }} SIK Belum Cair</span>
+        <span class="text-white-50 small">Menunggu SP2D</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 2: SPD Outstanding -->
+  <div class="col-xl-3 col-md-6">
+    <div class="metric-card-header">
+      <div class="metric-title text-danger">
+        <i class="bi bi-airplane-engines"></i> SPD Outstanding (Luar Kota)
+      </div>
+      <div class="metric-value text-danger">{{ spd_outstanding|rupiah }}</div>
+      <div class="d-flex align-items-center justify-content-between">
+        <span class="metric-trend trend-down"><i class="bi bi-geo-alt"></i> {{ count_spd_out }} SPD Belum Cair</span>
+        <span class="text-white-50 small">Menunggu SP2D</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 3: SIK Cair -->
+  <div class="col-xl-3 col-md-6">
+    <div class="metric-card-header">
+      <div class="metric-title text-success">
+        <i class="bi bi-check-circle-fill"></i> SIK Telah Cair (Dalam Kota)
+      </div>
+      <div class="metric-value text-success">{{ sik_cair|rupiah }}</div>
+      <div class="d-flex align-items-center justify-content-between">
+        <span class="metric-trend trend-up"><i class="bi bi-building"></i> {{ count_sik_cair }} SIK Terealisasi</span>
+        <span class="text-white-50 small">Selesai / Uang Muka</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Card 4: SPD Cair -->
+  <div class="col-xl-3 col-md-6">
+    <div class="metric-card-header">
+      <div class="metric-title text-info">
+        <i class="bi bi-cash-stack"></i> SPD Telah Cair (Luar Kota)
+      </div>
+      <div class="metric-value text-info">{{ spd_cair|rupiah }}</div>
+      <div class="d-flex align-items-center justify-content-between">
+        <span class="metric-trend trend-up"><i class="bi bi-cash-coin"></i> {{ count_spd_cair }} SPD Terealisasi</span>
+        <span class="text-white-50 small">Selesai / Uang Muka</span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Overview Header Bar (Title, Export Buttons, New ST Action) -->
+<div class="d-flex flex-wrap align-items-center justify-content-between mt-4 mb-4 gap-3">
+  <div>
+    <h4 class="fw-bold mb-1 text-dark">
+      {% if current_user.role == 'PEGAWAI' %}
+        Surat Tugas &amp; SIK/SPD Saya
+      {% else %}
+        Ringkasan Monitoring SIK &amp; SPD
+      {% endif %}
+    </h4>
+    <p class="text-muted small mb-0">
+      {% if current_user.role == 'PEGAWAI' %}
+        Daftar penugasan dinas Anda, progres pertanggungjawaban, dan kelengkapan dokumen peserta se-tim.
+      {% else %}
+        Pemantauan pengajuan SIK/SPD, progres laporan &amp; geotagging, pencairan dana, dan arsip DNPD.
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="d-flex flex-wrap align-items-center gap-2">
+    <a href="{{ url_for('export.excel_surat_tugas') }}" class="btn btn-outline-secondary btn-sm bg-white shadow-sm">
+      <i class="bi bi-file-earmark-excel text-success me-1"></i> Export Excel
+    </a>
+    <a href="{{ url_for('export.excel_peserta') }}" class="btn btn-outline-secondary btn-sm bg-white shadow-sm">
+      <i class="bi bi-people-fill text-primary me-1"></i> Rekap Uang Harian
+    </a>
+    {% if current_user.is_admin or current_user.is_bendahara %}
+    <button type="button" class="btn btn-primary btn-sm fw-semibold shadow-sm px-3" data-bs-toggle="modal" data-bs-target="#modalInputST">
+      <i class="bi bi-plus-lg me-1"></i> Buat Surat Tugas Baru
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Recent SIK/SPD Table -->
+<div class="card card-monsik mb-4">
+  <div class="card-monsik-header">
+    <div class="d-flex align-items-center gap-3">
+      <h5 class="card-title-monsik">
+        {% if current_user.role == 'PEGAWAI' %}
+          Daftar Surat Tugas Saya
+        {% else %}
+          Daftar SIK &amp; SPD Terkini
+        {% endif %}
+      </h5>
+      <!-- Filtering SIK Dalam Kota & SPD Luar Kota -->
+      <div class="d-none d-md-flex gap-1">
+        <a href="{{ url_for('dashboard.index') }}" class="btn btn-sm {% if not jenis_filter %}btn-secondary{% else %}btn-outline-secondary{% endif %}">Semua</a>
+        <a href="{{ url_for('dashboard.index', jenis='SIK') }}" class="btn btn-sm {% if jenis_filter == 'SIK' %}btn-info text-dark{% else %}btn-outline-info{% endif %}">
+          <i class="bi bi-building me-1"></i> SIK Dalam Kota
+        </a>
+        <a href="{{ url_for('dashboard.index', jenis='SPD') }}" class="btn btn-sm {% if jenis_filter == 'SPD' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+          <i class="bi bi-airplane-engines me-1"></i> SPD Luar Kota
+        </a>
+        <a href="{{ url_for('surat_tugas.index', status='OUTSTANDING') }}" class="btn btn-sm btn-outline-danger">Outstanding</a>
+        <a href="{{ url_for('surat_tugas.index', status='CAIR_PENUH') }}" class="btn btn-sm btn-outline-success">Cair Penuh</a>
+      </div>
+    </div>
+    <a href="{{ url_for('surat_tugas.index') }}" class="btn btn-link btn-sm text-primary text-decoration-none">
+      Lihat Semua <i class="bi bi-arrow-right"></i>
+    </a>
+  </div>
+  
+  <div class="table-responsive">
+    <table class="table table-monsik align-middle mb-0">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Jenis &amp; Nomor ST</th>
+          <th>Maksud &amp; Tujuan</th>
+          <th>Jadwal &amp; Kota</th>
+          <th>Peserta &amp; Rekan ST</th>
+          <th class="text-end">Telah Cair</th>
+          <th class="text-end">Outstanding</th>
+          <th class="text-center" style="min-width: 200px;">Progress Pertanggungjawaban</th>
+          <th class="text-center">Dokumen DNPD</th>
+          <th class="text-end">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for st in st_terbaru %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td>
+            <div class="mb-1">
+              {% if (st.jenis_surat or 'SIK') == 'SPD' %}
+                <span class="badge bg-primary" style="font-size: 0.68rem;"><i class="bi bi-airplane-engines me-1"></i>SPD Luar Kota</span>
+              {% else %}
+                <span class="badge bg-info text-dark" style="font-size: 0.68rem;"><i class="bi bi-building me-1"></i>SIK Dalam Kota</span>
+              {% endif %}
+            </div>
+            <a href="{{ url_for('surat_tugas.detail', id=st.id) }}" class="fw-bold text-primary text-decoration-none">
+              {{ st.nomor_st }}
+            </a>
+            <div class="small text-muted">{{ st.nomor_spd or '-' }}</div>
+          </td>
+          <td style="max-width: 200px;">
+            <div class="fw-semibold text-dark text-truncate" title="{{ st.maksud_tugas }}">{{ st.maksud_tugas }}</div>
+            <div class="small text-muted">{{ st.akun_anggaran }}</div>
+          </td>
+          <td>
+            <div class="badge bg-light text-dark border mb-1"><i class="bi bi-geo-alt-fill text-danger"></i> {{ st.kota_tujuan }}</div>
+            <div class="small text-muted">{{ st.jumlah_hari }} hari ({{ st.tanggal_st|tanggal }})</div>
+          </td>
+          <td>
+            <!-- POPUP MODAL PESERTA: Muncul popup modal beserta statusnya, tidak menggunakan dropdown agar tidak terpotong -->
+            <button type="button" class="btn btn-sm btn-light border py-1 px-2 shadow-sm text-nowrap"
+                    data-bs-toggle="modal" data-bs-target="#modalPesertaDash-{{ st.id }}"
+                    title="Klik untuk mengecek rincian peserta &amp; status pertanggungjawaban">
+              <i class="bi bi-people-fill text-primary me-1"></i>
+              <span class="fw-semibold">{{ st.peserta_list|length }} Orang</span>
+              <i class="bi bi-box-arrow-up-right ms-1 text-muted" style="font-size: 0.68rem;"></i>
+            </button>
+          </td>
+          <td class="text-end fw-bold text-success">
+            {{ st.get_cair_for_user(current_user)|rupiah }}
+          </td>
+          <td class="text-end fw-bold {% if st.progress_status == 'HIJAU' %}text-muted{% else %}text-danger{% endif %}">
+            {{ st.get_outstanding_for_user(current_user)|rupiah }}
+          </td>
+          <td class="text-center">
+            <!-- Progress Status Pertanggungjawaban -->
+            {% if current_user.is_admin %}
+            <div class="dropdown d-inline-block">
+              <button class="btn btn-sm dropdown-toggle py-1 px-2 fw-semibold shadow-sm
+                {% if st.progress_status == 'HIJAU' %}btn-success
+                {% elif st.progress_status == 'KUNING' %}btn-warning text-dark
+                {% else %}btn-danger{% endif %}" 
+                type="button" data-bs-toggle="dropdown" style="font-size: 0.75rem;">
+                <i class="bi {{ st.progress_info.icon }} me-1"></i> {{ st.progress_info.label }}
+              </button>
+              <ul class="dropdown-menu shadow border-0" style="font-size: 0.8rem;">
+                <li><h6 class="dropdown-header">Ubah Progress (Khusus Admin):</h6></li>
+                <li>
+                  <form method="POST" action="{{ url_for('surat_tugas.update_progress', id=st.id) }}">
+                    <input type="hidden" name="progress_status" value="MERAH">
+                    <button type="submit" class="dropdown-item text-danger {% if st.progress_status == 'MERAH' %}fw-bold bg-danger bg-opacity-10{% endif %}">
+                      <i class="bi bi-exclamation-triangle-fill me-2"></i> Merah: Belum Upload Laporan &amp; Sinkron Geotagging
+                    </button>
+                  </form>
+                </li>
+                <li>
+                  <form method="POST" action="{{ url_for('surat_tugas.update_progress', id=st.id) }}">
+                    <input type="hidden" name="progress_status" value="KUNING">
+                    <button type="submit" class="dropdown-item text-warning-emphasis {% if st.progress_status == 'KUNING' %}fw-bold bg-warning bg-opacity-10{% endif %}">
+                      <i class="bi bi-hourglass-split me-2"></i> Kuning: Sudah Upload Laporan Menunggu Pencairan
+                    </button>
+                  </form>
+                </li>
+                <li>
+                  <form method="POST" action="{{ url_for('surat_tugas.update_progress', id=st.id) }}">
+                    <input type="hidden" name="progress_status" value="HIJAU">
+                    <button type="submit" class="dropdown-item text-success {% if st.progress_status == 'HIJAU' %}fw-bold bg-success bg-opacity-10{% endif %}">
+                      <i class="bi bi-check-circle-fill me-2"></i> Hijau: Telah Cair
+                    </button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+            {% else %}
+              <span class="badge {{ st.progress_info.bg_class }} p-2 d-inline-block text-wrap" style="font-size: 0.74rem; line-height: 1.2; max-width: 230px;">
+                <i class="bi {{ st.progress_info.icon }} me-1"></i> {{ st.progress_info.label }}
+              </span>
+            {% endif %}
+          </td>
+          <td class="text-center">
+            <!-- Dokumen DNPD (Bendahara & Pegawai dapat unduh) -->
+            {% if st.dnpd_filename %}
+              <a href="{{ url_for('dnpd.download', st_id=st.id) }}" class="btn btn-sm btn-outline-success py-1 px-2" title="Unduh DNPD: {{ st.dnpd_original_name }}">
+                <i class="bi bi-file-earmark-check-fill me-1"></i> DNPD
+              </a>
+            {% else %}
+              <span class="badge bg-light text-muted border">Belum Ada</span>
+            {% endif %}
+          </td>
+          <td class="text-end">
+            <div class="dropdown">
+              <button class="btn btn-sm btn-light border dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                Aksi
+              </button>
+              <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                <li><a class="dropdown-item" href="{{ url_for('surat_tugas.detail', id=st.id) }}"><i class="bi bi-eye text-primary me-2"></i> Detail ST &amp; Rekan</a></li>
+                {% if current_user.is_admin %}
+                <li><a class="dropdown-item" href="{{ url_for('surat_tugas.edit', id=st.id) }}"><i class="bi bi-pencil-square text-warning me-2"></i> Edit ST &amp; Peserta</a></li>
+                {% endif %}
+                <li><a class="dropdown-item" href="{{ url_for('export.cetak_spd', st_id=st.id) }}" target="_blank"><i class="bi bi-printer text-info me-2"></i> Cetak Format SPD</a></li>
+                {% if current_user.is_bendahara %}
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{{ url_for('pencairan.index') }}"><i class="bi bi-cash-coin text-success me-2"></i> Proses Pencairan</a></li>
+                {% endif %}
+              </ul>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" class="text-center py-4 text-muted">
+            {% if current_user.role == 'PEGAWAI' %}
+              Belum ada data Surat Tugas yang melibatkan Anda.
+            {% else %}
+              Belum ada data Surat Tugas. Silakan klik tombol <strong>Buat Surat Tugas Baru</strong>.
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL POPUP PESERTA DASHBOARD (Muncul popup modal beserta statusnya, tidak terpotong) -->
+{% for st in st_terbaru %}
+<div class="modal fade" id="modalPesertaDash-{{ st.id }}" tabindex="-1" aria-labelledby="modalLabelDash-{{ st.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-light">
+        <div>
+          <h6 class="modal-title fw-bold text-dark mb-0" id="modalLabelDash-{{ st.id }}">
+            <i class="bi bi-people-fill text-primary me-2"></i>Daftar Peserta ST: {{ st.nomor_st }}
+          </h6>
+          <div class="d-flex align-items-center gap-2 mt-1">
+            {% if (st.jenis_surat or 'SIK') == 'SPD' %}
+              <span class="badge bg-primary" style="font-size: 0.7rem;"><i class="bi bi-airplane-engines me-1"></i>SPD Luar Kota</span>
+            {% else %}
+              <span class="badge bg-info text-dark" style="font-size: 0.7rem;"><i class="bi bi-building me-1"></i>SIK Dalam Kota</span>
+            {% endif %}
+            <span class="badge bg-secondary" style="font-size: 0.7rem;">{{ st.peserta_list|length }} Personel</span>
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-3">
+        <div class="alert alert-light border small mb-3 text-muted">
+          <div><i class="bi bi-info-circle me-1 text-primary"></i><strong>Maksud Penugasan:</strong> {{ st.maksud_tugas }}</div>
+          <div><i class="bi bi-geo-alt me-1 text-danger"></i><strong>Kota Tujuan:</strong> {{ st.kota_tujuan }} &bull; <strong>Jadwal:</strong> {{ st.tanggal_st|tanggal }} ({{ st.jumlah_hari }} hari)</div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>No</th>
+                <th>Nama Pegawai &amp; NIP</th>
+                <th>Peran</th>
+                <th class="text-end">Uang Harian</th>
+                <th class="text-center">Status Pertanggungjawaban</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in st.peserta_list %}
+              <tr>
+                <td>{{ loop.index }}</td>
+                <td>
+                  <div class="fw-bold text-dark">{{ p.nama_pegawai }}</div>
+                  <div class="small text-muted">NIP: {{ p.nip or '-' }}</div>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ p.peran }}</span></td>
+                <td class="text-end fw-semibold">{{ p.total_uang_harian|rupiah }}</td>
+                <td class="text-center">
+                  {% if p.status_lpj_peserta == 'SELESAI' %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                      <i class="bi bi-check-circle-fill me-1"></i> Selesai
+                    </span>
+                  {% elif p.status_lpj_peserta == 'MENUNGGU_VERIFIKASI' %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                      <i class="bi bi-hourglass-split me-1"></i> Menunggu Verifikasi
+                    </span>
+                  {% else %}
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                      <i class="bi bi-exclamation-triangle-fill me-1"></i> Belum Upload / Sinkron Geotagging
+                    </span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="5" class="text-center py-3 text-muted">Belum ada peserta terdaftar.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer bg-light py-2">
+        <a href="{{ url_for('surat_tugas.detail', id=st.id) }}" class="btn btn-sm btn-primary">
+          <i class="bi bi-eye me-1"></i> Buka Detail ST Selengkapnya
+        </a>
+        <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}

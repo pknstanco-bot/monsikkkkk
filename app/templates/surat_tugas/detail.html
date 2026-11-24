@@ -1,0 +1,412 @@
+{% extends 'base.html' %}
+
+{% block title %}Detail ST {{ st.nomor_st }} – MONSIK{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap align-items-center justify-content-between mt-4 mb-4 gap-3">
+  <div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+      <h4 class="fw-bold mb-0 text-dark">{{ st.nomor_st }}</h4>
+      {% if (st.jenis_surat or 'SIK') == 'SPD' %}
+        <span class="badge bg-primary"><i class="bi bi-airplane-engines me-1"></i>SPD Luar Kota</span>
+      {% else %}
+        <span class="badge bg-info text-dark"><i class="bi bi-building me-1"></i>SIK Dalam Kota</span>
+      {% endif %}
+      {% if st.status_pencairan == 'CAIR_PENUH' %}
+        <span class="badge-status badge-cair-penuh"><i class="bi bi-check-circle-fill"></i> Cair Penuh</span>
+      {% elif st.status_pencairan == 'CAIR_SEBAGIAN' %}
+        <span class="badge-status badge-cair-sebagian"><i class="bi bi-clock-history"></i> Cair Sebagian</span>
+      {% else %}
+        <span class="badge-status badge-outstanding"><i class="bi bi-exclamation-circle-fill"></i> Outstanding</span>
+      {% endif %}
+    </div>
+    <p class="text-muted small mb-0 mt-1">SPD: <strong>{{ st.nomor_spd or '-' }}</strong> &bull; Dibuat: {{ st.created_at|tanggal }}</p>
+  </div>
+
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{{ url_for('surat_tugas.index') }}" class="btn btn-light border btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Kembali
+    </a>
+    <a href="{{ url_for('export.cetak_spd', st_id=st.id) }}" target="_blank" class="btn btn-outline-secondary btn-sm bg-white">
+      <i class="bi bi-printer me-1"></i> Cetak Format SPD
+    </a>
+    <a href="{{ url_for('surat_tugas.edit', id=st.id) }}" class="btn btn-outline-primary btn-sm bg-white">
+      <i class="bi bi-pencil me-1"></i> Edit ST & Peserta
+    </a>
+    {% if current_user.is_bendahara %}
+    <button type="button" class="btn btn-success btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#modalPencairan">
+      <i class="bi bi-cash-stack me-1"></i> Proses Pencairan
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Info Cards Summary -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card card-monsik p-3 mb-0">
+      <div class="small text-muted fw-bold text-uppercase">
+        {% if current_user.role == 'PEGAWAI' %}Uang Saku / Hak Anda{% else %}Total Anggaran{% endif %}
+      </div>
+      <div class="fs-4 fw-bold text-dark mt-1">{{ st.get_anggaran_for_user(current_user)|rupiah }}</div>
+      <small class="text-muted">
+        {% if current_user.role == 'PEGAWAI' %}Hak uang harian/biaya dinas Anda{% else %}{{ st.peserta_list|length }} Orang Peserta{% endif %}
+      </small>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card card-monsik p-3 mb-0">
+      <div class="small text-muted fw-bold text-uppercase">
+        {% if current_user.role == 'PEGAWAI' %}Telah Anda Terima{% else %}Telah Dicairkan{% endif %}
+      </div>
+      <div class="fs-4 fw-bold text-success mt-1">
+        {{ st.get_cair_for_user(current_user)|rupiah }}
+      </div>
+      <small class="text-muted">
+        {% if current_user.role == 'PEGAWAI' %}Realisasi pencairan untuk Anda{% else %}{{ st.pencairan_list|length }} Kali Transaksi Pencairan{% endif %}
+      </small>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card card-monsik p-3 mb-0">
+      <div class="small text-muted fw-bold text-uppercase">
+        {% if current_user.role == 'PEGAWAI' %}Sisa Belum Diterima{% else %}Sisa Belum Cair{% endif %}
+      </div>
+      <div class="fs-4 fw-bold {% if st.progress_status == 'HIJAU' %}text-success{% else %}text-warning{% endif %} mt-1">
+        {{ st.get_outstanding_for_user(current_user)|rupiah }}
+      </div>
+      <small class="text-muted">
+        {% if st.progress_status == 'HIJAU' %}
+          <i class="bi bi-check-circle-fill text-success"></i> Telah Dicairkan 100%
+        {% else %}
+          Status: {{ st.status_pencairan }}
+        {% endif %}
+      </small>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card card-monsik p-3 mb-0">
+      <div class="small text-muted fw-bold text-uppercase">Progress Laporan & Pencairan</div>
+      <div class="mt-1">
+        <span class="badge {{ st.progress_info.bg_class }} p-2 d-inline-block text-wrap w-100" style="font-size: 0.75rem;">
+          <i class="bi {{ st.progress_info.icon }} me-1"></i> {{ st.progress_info.label }}
+        </span>
+      </div>
+      {% if current_user.is_admin %}
+      <div class="dropdown mt-2">
+        <button class="btn btn-xs btn-outline-secondary dropdown-toggle w-100 py-1" type="button" data-bs-toggle="dropdown" style="font-size: 0.72rem;">
+          <i class="bi bi-pencil-square me-1"></i> Ubah Progress ST
+        </button>
+        <ul class="dropdown-menu shadow border-0" style="font-size: 0.78rem;">
+          <li>
+            <form method="POST" action="{{ url_for('surat_tugas.update_progress', id=st.id) }}">
+              <input type="hidden" name="progress_status" value="MERAH">
+              <button type="submit" class="dropdown-item text-danger">🔴 Merah: Belum Upload & Sinkron Geotagging</button>
+            </form>
+          </li>
+          <li>
+            <form method="POST" action="{{ url_for('surat_tugas.update_progress', id=st.id) }}">
+              <input type="hidden" name="progress_status" value="KUNING">
+              <button type="submit" class="dropdown-item text-warning-emphasis">🟡 Kuning: Sudah Upload Menunggu Pencairan</button>
+            </form>
+          </li>
+          <li>
+            <form method="POST" action="{{ url_for('surat_tugas.update_progress', id=st.id) }}">
+              <input type="hidden" name="progress_status" value="HIJAU">
+              <button type="submit" class="dropdown-item text-success">🟢 Hijau: Telah Cair</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left Column: ST Details & Peserta List -->
+  <div class="col-lg-8">
+    <!-- Rincian Penugasan -->
+    <div class="card card-monsik mb-4">
+      <div class="card-monsik-header">
+        <h5 class="card-title-monsik"><i class="bi bi-info-circle text-primary me-2"></i>Informasi Penugasan</h5>
+      </div>
+      <div class="card-monsik-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <span class="text-muted small d-block">Maksud Perjalanan Dinas:</span>
+            <span class="fw-semibold text-dark">{{ st.maksud_tugas }}</span>
+          </div>
+          <div class="col-md-6">
+            <span class="text-muted small d-block">Kota & Tempat Tujuan:</span>
+            <span class="fw-semibold text-dark"><i class="bi bi-geo-alt-fill text-danger me-1"></i>{{ st.kota_tujuan }} ({{ st.tempat_tujuan }})</span>
+          </div>
+          <div class="col-md-4">
+            <span class="text-muted small d-block">Jadwal Pelaksanaan:</span>
+            <span class="fw-semibold text-dark">{{ st.tanggal_berangkat|tanggal }} s/d {{ st.tanggal_kembali|tanggal }}</span>
+          </div>
+          <div class="col-md-4">
+            <span class="text-muted small d-block">Durasi Tugas:</span>
+            <span class="fw-semibold text-dark">{{ st.jumlah_hari }} Hari Kalender</span>
+          </div>
+          <div class="col-md-4">
+            <span class="text-muted small d-block">Jenis Penugasan:</span>
+            <span class="fw-semibold text-dark">
+              {% if (st.jenis_surat or 'SIK') == 'SPD' %}
+                <span class="badge bg-primary">SPD (Luar Kota)</span>
+              {% else %}
+                <span class="badge bg-info text-dark">SIK (Dalam Kota)</span>
+              {% endif %}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rincian Multi Peserta & Uang Harian -->
+    <div class="card card-monsik mb-4">
+      <div class="card-monsik-header d-flex justify-content-between align-items-center">
+        <div>
+          <h5 class="card-title-monsik mb-0"><i class="bi bi-people-fill text-success me-2"></i>Daftar Peserta & Kelengkapan Pertanggungjawaban</h5>
+          <small class="text-muted">Cek rekan satu tim yang sudah atau belum melengkapi LPJ</small>
+        </div>
+        <span class="badge bg-light text-dark border">{{ st.peserta_list|length }} Peserta</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-monsik align-middle mb-0">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Nama Pegawai & NIP</th>
+              <th>Peran</th>
+              <th class="text-center">Status Pertanggungjawaban</th>
+              <th class="text-end">Uang Harian</th>
+              <th class="text-end">Total Diterima</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in st.peserta_list %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>
+                <div class="fw-bold text-dark">{{ p.nama_pegawai }}</div>
+                <small class="text-muted">NIP: {{ p.nip or '-' }}</small>
+              </td>
+              <td>
+                <span class="badge bg-light text-primary border">{{ p.peran }}</span>
+              </td>
+              <td class="text-center">
+                {% if current_user.is_admin %}
+                <div class="dropdown">
+                  <button class="btn btn-xs dropdown-toggle py-1 px-2 fw-semibold
+                    {% if p.status_lpj_peserta == 'SELESAI' %}btn-outline-success
+                    {% elif p.status_lpj_peserta == 'MENUNGGU_VERIFIKASI' %}btn-outline-warning text-dark
+                    {% else %}btn-outline-danger{% endif %}"
+                    type="button" data-bs-toggle="dropdown" style="font-size: 0.72rem;">
+                    {% if p.status_lpj_peserta == 'SELESAI' %}🟢 Lengkap / Cair
+                    {% elif p.status_lpj_peserta == 'MENUNGGU_VERIFIKASI' %}🟡 Menunggu Pencairan
+                    {% else %}🔴 Belum Upload / Sinkron{% endif %}
+                  </button>
+                  <ul class="dropdown-menu shadow border-0" style="font-size: 0.78rem;">
+                    <li><h6 class="dropdown-header">Ubah Status {{ p.nama_pegawai }}:</h6></li>
+                    <li>
+                      <form method="POST" action="{{ url_for('surat_tugas.update_peserta_status', peserta_id=p.id) }}">
+                        <input type="hidden" name="status_lpj_peserta" value="BELUM_LPJ">
+                        <button type="submit" class="dropdown-item text-danger">🔴 Belum Upload & Sinkron Geotagging</button>
+                      </form>
+                    </li>
+                    <li>
+                      <form method="POST" action="{{ url_for('surat_tugas.update_peserta_status', peserta_id=p.id) }}">
+                        <input type="hidden" name="status_lpj_peserta" value="MENUNGGU_VERIFIKASI">
+                        <button type="submit" class="dropdown-item text-warning-emphasis">🟡 Sudah Upload Menunggu Pencairan</button>
+                      </form>
+                    </li>
+                    <li>
+                      <form method="POST" action="{{ url_for('surat_tugas.update_peserta_status', peserta_id=p.id) }}">
+                        <input type="hidden" name="status_lpj_peserta" value="SELESAI">
+                        <button type="submit" class="dropdown-item text-success">🟢 Telah Cair / Selesai</button>
+                      </form>
+                    </li>
+                  </ul>
+                </div>
+                {% else %}
+                  {% if p.status_lpj_peserta == 'SELESAI' %}
+                    <span class="badge bg-success" style="font-size: 0.72rem;">🟢 Telah Cair / Lengkap</span>
+                  {% elif p.status_lpj_peserta == 'MENUNGGU_VERIFIKASI' %}
+                    <span class="badge bg-warning text-dark" style="font-size: 0.72rem;">🟡 Menunggu Pencairan</span>
+                  {% else %}
+                    <span class="badge bg-danger" style="font-size: 0.72rem;">🔴 Belum Upload / Sinkron</span>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td class="text-end">
+                <div>{{ p.total_uang_harian|rupiah }}</div>
+              </td>
+              <td class="text-end fw-bold text-dark">
+                {{ p.total_biaya_peserta|rupiah }}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot class="table-light">
+            <tr>
+              <th colspan="5" class="text-end">TOTAL KESELURUHAN BIAYA:</th>
+              <th class="text-end text-primary fs-6">{{ st.total_anggaran|rupiah }}</th>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Column: Dokumen DNPD & Riwayat Pencairan -->
+  <div class="col-lg-4">
+    <!-- Dokumen DNPD Card -->
+    <div class="card card-monsik mb-4">
+      <div class="card-monsik-header">
+        <h5 class="card-title-monsik"><i class="bi bi-file-earmark-check text-info me-2"></i>Dokumen DNPD</h5>
+      </div>
+      <div class="card-monsik-body">
+        {% if st.dnpd_filename %}
+          <div class="p-3 bg-light rounded-3 border mb-3">
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <i class="bi bi-file-earmark-pdf-fill fs-2 text-danger"></i>
+              <div class="overflow-hidden">
+                <div class="fw-bold text-truncate" title="{{ st.dnpd_original_name }}">{{ st.dnpd_original_name }}</div>
+                <small class="text-muted d-block">Diunggah: {{ st.dnpd_uploaded_at|tanggal }}</small>
+                <small class="text-muted d-block">Oleh: {{ st.dnpd_uploaded_by or '-' }}</small>
+              </div>
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+              <a href="{{ url_for('dnpd.download', st_id=st.id) }}" class="btn btn-sm btn-primary flex-fill">
+                <i class="bi bi-download me-1"></i> Unduh
+              </a>
+              <a href="{{ url_for('dnpd.preview', st_id=st.id) }}" target="_blank" class="btn btn-sm btn-outline-secondary bg-white flex-fill">
+                <i class="bi bi-eye me-1"></i> Lihat
+              </a>
+            </div>
+          </div>
+        {% else %}
+          <div class="text-center py-4 text-muted bg-light rounded-3 border mb-3">
+            <i class="bi bi-file-earmark-x fs-1 text-secondary opacity-50 mb-2"></i>
+            <p class="small mb-0">Belum ada dokumen DNPD diunggah untuk ST ini.</p>
+          </div>
+        {% endif %}
+
+        <!-- Form Upload / Ganti DNPD -->
+        <form method="POST" action="{{ url_for('dnpd.upload', st_id=st.id) }}" enctype="multipart/form-data">
+          <label class="form-label small fw-bold">{% if st.dnpd_filename %}Ganti File DNPD{% else %}Unggah Dokumen DNPD{% endif %}</label>
+          <input type="file" name="dnpd_file" class="form-control form-control-sm mb-2" required>
+          <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+            <i class="bi bi-upload me-1"></i> Simpan ke storage/dnpd/
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Riwayat Pencairan Dana -->
+    <div class="card card-monsik">
+      <div class="card-monsik-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title-monsik"><i class="bi bi-receipt-cutoff text-success me-2"></i>Riwayat SP2D / Pencairan</h5>
+      </div>
+      <div class="card-monsik-body p-0">
+        {% if st.pencairan_list %}
+          <ul class="list-group list-group-flush small">
+            {% for c in st.pencairan_list %}
+            <li class="list-group-item p-3">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <span class="fw-bold text-dark">{{ c.nomor_sp2d_kwitansi }}</span>
+                <span class="badge bg-success">{{ c.jenis_pencairan }}</span>
+              </div>
+              <div class="text-success fw-bold fs-6">{{ c.jumlah_cair|rupiah }}</div>
+              <div class="text-muted small mt-1">
+                <span><i class="bi bi-calendar-event me-1"></i>{{ c.tanggal_cair|tanggal }}</span> &bull; 
+                <span>{{ c.metode_bayar }}</span>
+              </div>
+              {% if c.catatan %}
+              <div class="text-muted small mt-1 fst-italic">"{{ c.catatan }}"</div>
+              {% endif %}
+              {% if current_user.is_bendahara %}
+              <form method="POST" action="{{ url_for('pencairan.batal', cair_id=c.id) }}" class="mt-2 text-end" onsubmit="return confirm('Batalkan transaksi pencairan ini?');">
+                <button type="submit" class="btn btn-link text-danger p-0 small text-decoration-none" style="font-size: 0.75rem;">
+                  <i class="bi bi-trash"></i> Batalkan
+                </button>
+              </form>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <div class="text-center py-4 text-muted">
+            <small>Belum ada riwayat pencairan dana.</small>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Pencairan Dana (Bendahara) -->
+{% if current_user.is_bendahara %}
+<div class="modal fade" id="modalPencairan" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('pencairan.proses', st_id=st.id) }}">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold"><i class="bi bi-cash-coin text-success me-2"></i>Proses Pencairan SIK / SPD</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Nomor SP2D / Kwitansi / Bukti Bayar <span class="text-danger">*</span></label>
+            <input type="text" name="nomor_sp2d" class="form-control" placeholder="Contoh: SP2D-2026-00982 / KW-012" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Tanggal Pencairan <span class="text-danger">*</span></label>
+            <input type="date" name="tanggal_cair" class="form-control" value="{{ now.strftime('%Y-%m-%d') if now else '' }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Jenis Pencairan</label>
+            <select name="jenis_pencairan" class="form-select">
+              <option value="PENUH">Pencairan Penuh (100%)</option>
+              <option value="UANG_MUKA">Uang Muka (Sebagian)</option>
+              <option value="PELUNASAN">Pelunasan Sisa</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Jumlah Pencairan (Rp) <span class="text-danger">*</span></label>
+            <input type="number" name="jumlah_cair" class="form-control fw-bold text-success fs-5" value="{{ (st.total_anggaran - st.total_dicairkan)|int }}" required>
+            <small class="text-muted">Sisa anggaran yang belum dicairkan: <strong>{{ (st.total_anggaran - st.total_dicairkan)|rupiah }}</strong></small>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Metode Pembayaran</label>
+            <select name="metode_bayar" class="form-select">
+              <option value="Transfer Bank">Transfer Bank Rekening Pegawai</option>
+              <option value="Tunai">Tunai Langsung di Kasir Bendahara</option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-bold">Catatan Bendahara</label>
+            <input type="text" name="catatan" class="form-control" placeholder="Catatan transaksi pencairan...">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Tutup</button>
+          <button type="submit" class="btn btn-success fw-semibold">Konfirmasi & Simpan Pencairan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,182 @@
+<!-- Modal Input Surat Tugas (Model Popup Sederhana) -->
+<div class="modal fade" id="modalInputST" tabindex="-1" aria-labelledby="modalInputSTLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0">
+      <form method="POST" action="{{ url_for('surat_tugas.create') }}" enctype="multipart/form-data">
+        <div class="modal-header bg-dark text-white border-0 py-3">
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary p-2"><i class="bi bi-file-earmark-plus-fill fs-5"></i></span>
+            <div>
+              <h5 class="modal-title fw-bold mb-0" id="modalInputSTLabel">Input Surat Tugas Baru</h5>
+              <small class="text-white-50">Isi data pokok Surat Tugas dan daftar peserta</small>
+            </div>
+          </div>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <!-- 0. Pilihan Jenis: SIK (Dalam Kota) vs SPD (Luar Kota) -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark d-block">
+              <i class="bi bi-tag-fill text-primary me-1"></i>Jenis Penugasan Dinas <span class="text-danger">*</span>
+            </label>
+            <div class="d-flex gap-2">
+              <div class="form-check form-check-inline p-2 border rounded-3 bg-white flex-fill mb-0">
+                <input class="form-check-input ms-1 me-2" type="radio" name="jenis_surat" id="modalJenisSIK" value="SIK" checked>
+                <label class="form-check-label fw-semibold text-dark small" for="modalJenisSIK">
+                  <i class="bi bi-building text-info me-1"></i> SIK (Dalam Kota)
+                </label>
+              </div>
+              <div class="form-check form-check-inline p-2 border rounded-3 bg-white flex-fill mb-0">
+                <input class="form-check-input ms-1 me-2" type="radio" name="jenis_surat" id="modalJenisSPD" value="SPD">
+                <label class="form-check-label fw-semibold text-dark small" for="modalJenisSPD">
+                  <i class="bi bi-airplane-engines text-primary me-1"></i> SPD (Luar Kota)
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- 1. Nomor ST -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">
+              <i class="bi bi-hash text-primary me-1"></i>Nomor Surat Tugas (ST) <span class="text-danger">*</span>
+            </label>
+            <input type="text" name="nomor_st" class="form-control" placeholder="Contoh: ST/025/KUG/III/2026" required autofocus>
+          </div>
+
+          <!-- 2. Nama / Maksud ST -->
+          <div class="mb-3">
+            <label class="form-label small fw-bold text-dark">
+              <i class="bi bi-card-text text-primary me-1"></i>Nama / Maksud Surat Tugas <span class="text-danger">*</span>
+            </label>
+            <textarea name="nama_st" class="form-control" rows="2" placeholder="Contoh: Rapat Koordinasi dan Monitoring SIK/SPD Lapangan" required></textarea>
+          </div>
+
+          <!-- 3. Peserta ST (Multi-Peserta, Golongan DITIADAKAN, Uang Harian Langsung Angka) -->
+          <div class="card bg-light border mb-3">
+            <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center py-2">
+              <span class="small fw-bold text-dark">
+                <i class="bi bi-people-fill text-success me-1"></i>Daftar Peserta & Uang Harian
+              </span>
+              <button type="button" class="btn btn-sm btn-outline-success" onclick="tambahPesertaModal()">
+                <i class="bi bi-plus-circle me-1"></i> Tambah Peserta
+              </button>
+            </div>
+            <div class="card-body p-3">
+              <!-- Label Header Kolom -->
+              <div class="row g-2 small fw-bold text-muted mb-1 px-1 d-none d-md-flex">
+                <div class="col-md-5">Nama Lengkap Pegawai <span class="text-danger">*</span></div>
+                <div class="col-md-3">NIP (Opsional)</div>
+                <div class="col-md-3">Uang Harian (Rp Langsung)</div>
+                <div class="col-md-1 text-center">Hapus</div>
+              </div>
+
+              <div id="modalPesertaContainer">
+                <!-- Baris Peserta 1 (Default) -->
+                <div class="row g-2 align-items-center mb-2 modal-peserta-row">
+                  <div class="col-md-5">
+                    <input type="text" name="peserta_nama[]" class="form-control form-control-sm" placeholder="Nama Lengkap Pegawai" list="modalPegawaiPreset" required>
+                  </div>
+                  <div class="col-md-3">
+                    <input type="text" name="peserta_nip[]" class="form-control form-control-sm" placeholder="NIP (Opsional)">
+                  </div>
+                  <div class="col-md-3">
+                    <input type="number" name="peserta_uang_harian[]" class="form-control form-control-sm" placeholder="Nominal Rp (misal 500000)" step="10000">
+                    <input type="hidden" name="peserta_peran[]" value="Anggota">
+                  </div>
+                  <div class="col-md-1 text-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger p-1 w-100" onclick="hapusPesertaModal(this)" title="Hapus"><i class="bi bi-trash"></i></button>
+                  </div>
+                </div>
+              </div>
+              <small class="text-muted d-block mt-2">
+                <i class="bi bi-info-circle me-1"></i>Masukkan langsung nominal angka uang harian (tidak dikali jumlah hari). Klik <strong>Tambah Peserta</strong> jika rombongan.
+              </small>
+            </div>
+          </div>
+
+          <!-- Opsional Singkat (Tanggal & Kota Tujuan) -->
+          <div class="row g-2">
+            <div class="col-md-6">
+              <label class="form-label small text-muted mb-1">Tanggal ST (Opsional)</label>
+              <input type="date" name="tanggal_st" class="form-control form-control-sm" value="{{ today.strftime('%Y-%m-%d') if today else '' }}">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small text-muted mb-1">Kota Tujuan (Opsional)</label>
+              <input type="text" name="kota_tujuan" class="form-control form-control-sm" placeholder="Contoh: Jakarta / Surabaya">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light border-0 py-3">
+          <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Batal</button>
+          <button type="submit" class="btn btn-primary fw-semibold px-4 shadow-sm">
+            <i class="bi bi-check2-circle me-1"></i> Simpan Surat Tugas
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Datalist Autocomplete Pegawai untuk Modal -->
+<datalist id="modalPegawaiPreset">
+  {% if registered_users %}
+    {% for u in registered_users %}
+      <option value="{{ u.nama_lengkap }}">{{ u.nip or '' }} - {{ u.jabatan or '' }}</option>
+    {% endfor %}
+  {% endif %}
+</datalist>
+
+<script>
+const PEGAWAI_NIP_MAP = {
+  {% if registered_users %}
+    {% for u in registered_users %}
+      "{{ u.nama_lengkap | replace('"', '\\"') }}": "{{ u.nip or '' }}",
+    {% endfor %}
+  {% endif %}
+};
+
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.name === 'peserta_nama[]') {
+    const row = e.target.closest('.modal-peserta-row');
+    if (row) {
+      const nipInput = row.querySelector('input[name="peserta_nip[]"]');
+      if (nipInput && PEGAWAI_NIP_MAP[e.target.value]) {
+        nipInput.value = PEGAWAI_NIP_MAP[e.target.value];
+      }
+    }
+  }
+});
+
+function tambahPesertaModal() {
+  const container = document.getElementById('modalPesertaContainer');
+  const div = document.createElement('div');
+  div.className = 'row g-2 align-items-center mb-2 modal-peserta-row';
+  div.innerHTML = `
+    <div class="col-md-5">
+      <input type="text" name="peserta_nama[]" class="form-control form-control-sm" placeholder="Nama Lengkap Pegawai" list="modalPegawaiPreset" required>
+    </div>
+    <div class="col-md-3">
+      <input type="text" name="peserta_nip[]" class="form-control form-control-sm" placeholder="NIP (Otomatis / Opsional)">
+    </div>
+    <div class="col-md-3">
+      <input type="number" name="peserta_uang_harian[]" class="form-control form-control-sm" placeholder="Nominal Rp (misal 500000)" step="10000">
+      <input type="hidden" name="peserta_peran[]" value="Anggota">
+    </div>
+    <div class="col-md-1 text-center">
+      <button type="button" class="btn btn-sm btn-outline-danger p-1 w-100" onclick="hapusPesertaModal(this)" title="Hapus"><i class="bi bi-trash"></i></button>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function hapusPesertaModal(btn) {
+  const rows = document.querySelectorAll('.modal-peserta-row');
+  if (rows.length > 1) {
+    btn.closest('.modal-peserta-row').remove();
+  } else {
+    alert("Surat Tugas minimal memiliki 1 peserta.");
+  }
+}
+</script>

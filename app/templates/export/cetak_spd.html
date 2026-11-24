@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Cetak SPD – {{ st.nomor_st }}</title>
+  <style>
+    body {
+      font-family: 'Times New Roman', Times, serif;
+      font-size: 12pt;
+      margin: 2cm;
+      color: #000;
+    }
+    .header-kop {
+      text-align: center;
+      border-bottom: 3px double #000;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+    }
+    .header-kop h3, .header-kop h4 {
+      margin: 2px 0;
+      text-transform: uppercase;
+    }
+    .title-doc {
+      text-align: center;
+      font-weight: bold;
+      text-decoration: underline;
+      margin-bottom: 2px;
+    }
+    .nomor-doc {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    table.table-spd {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 25px;
+    }
+    table.table-spd th, table.table-spd td {
+      border: 1px solid #000;
+      padding: 6px 8px;
+      vertical-align: top;
+    }
+    table.no-border td {
+      border: none;
+      padding: 4px;
+    }
+    .ttd-container {
+      margin-top: 30px;
+      float: right;
+      width: 300px;
+      text-align: center;
+    }
+    @media print {
+      body { margin: 1cm; }
+      .no-print { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="no-print" style="background: #f1f5f9; padding: 10px; margin-bottom: 20px; border-radius: 6px; text-align: center;">
+    <button onclick="window.print()" style="padding: 8px 16px; font-weight: bold; cursor: pointer; background: #2563eb; color: #fff; border: none; border-radius: 4px;">
+      🖨️ Cetak / Simpan sebagai PDF
+    </button>
+  </div>
+
+  <div class="header-kop">
+    <h4>KEMENTERIAN / LEMBAGA PEMERINTAH</h4>
+    <h3>SURAT PERJALANAN DINAS & SURAT IZIN KEGIATAN</h3>
+    <small>Alamat Kantor: Jl. Merdeka No. 10 Jakarta &bull; Telepon: (021) 12345678</small>
+  </div>
+
+  <div class="title-doc">SURAT PERJALANAN DINAS (SPD)</div>
+  <div class="nomor-doc">Nomor: {{ st.nomor_spd or st.nomor_st }}</div>
+
+  <table class="table-spd">
+    <tr>
+      <td style="width: 5%;">1.</td>
+      <td style="width: 45%;">Pejabat Pembuat Komitmen</td>
+      <td style="width: 50%;">Pejabat Pembuat Komitmen Satker</td>
+    </tr>
+    <tr>
+      <td>2.</td>
+      <td>Nama / NIP Pegawai yang diperintahkan</td>
+      <td>
+        {% if st.peserta_list %}
+          <strong>{{ st.peserta_list[0].nama_pegawai }}</strong><br>
+          NIP: {{ st.peserta_list[0].nip or '-' }}
+        {% else %}
+          -
+        {% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>3.</td>
+      <td>a. Pangkat dan Golongan<br>b. Jabatan / Instansi<br>c. Tingkat Biaya Perjalanan Dinas</td>
+      <td>
+        a. {{ st.peserta_list[0].golongan if st.peserta_list else '-' }}<br>
+        b. {{ st.peserta_list[0].jabatan if st.peserta_list else '-' }}<br>
+        c. {{ st.tingkat_biaya or 'Tingkat B' }}
+      </td>
+    </tr>
+    <tr>
+      <td>4.</td>
+      <td>Maksud Perjalanan Dinas</td>
+      <td>{{ st.maksud_tugas }}</td>
+    </tr>
+    <tr>
+      <td>5.</td>
+      <td>Alat Angkutan yang dipergunakan</td>
+      <td>Kendaraan Dinas / Pesawat Udara / Kereta Api</td>
+    </tr>
+    <tr>
+      <td>6.</td>
+      <td>a. Tempat berangkat<br>b. Tempat tujuan</td>
+      <td>
+        a. Kantor Kedudukan<br>
+        b. {{ st.kota_tujuan }} ({{ st.tempat_tujuan }})
+      </td>
+    </tr>
+    <tr>
+      <td>7.</td>
+      <td>a. Lamanya Perjalanan Dinas<br>b. Tanggal berangkat<br>c. Tanggal harus kembali</td>
+      <td>
+        a. {{ st.jumlah_hari }} ({{ st.jumlah_hari }}) hari<br>
+        b. {{ st.tanggal_berangkat|tanggal }}<br>
+        c. {{ st.tanggal_kembali|tanggal }}
+      </td>
+    </tr>
+    <tr>
+      <td>8.</td>
+      <td>Pengikut / Peserta Lainnya</td>
+      <td>
+        {% if st.peserta_list|length > 1 %}
+          <ol style="margin: 0; padding-left: 20px;">
+          {% for p in st.peserta_list[1:] %}
+            <li>{{ p.nama_pegawai }} (NIP: {{ p.nip or '-' }}) - {{ p.peran }}</li>
+          {% endfor %}
+          </ol>
+        {% else %}
+          - (Tidak ada pengikut)
+        {% endif %}
+      </td>
+    </tr>
+    <tr>
+      <td>9.</td>
+      <td>Pembebanan Anggaran<br>a. Instansi<br>b. Akun Mata Anggaran</td>
+      <td>
+        a. DIPA Satuan Kerja Tahun Anggaran 2026<br>
+        b. {{ st.akun_anggaran }}
+      </td>
+    </tr>
+    <tr>
+      <td>10.</td>
+      <td>Total Alokasi Anggaran SIK/SPD</td>
+      <td><strong>{{ st.total_anggaran|rupiah }}</strong></td>
+    </tr>
+  </table>
+
+  <div class="ttd-container">
+    <div>Dikeluarkan di: Jakarta</div>
+    <div>Pada tanggal: {{ st.tanggal_st|tanggal }}</div>
+    <div style="margin-top: 10px; font-weight: bold;">Pejabat Pembuat Komitmen,</div>
+    <div style="height: 65px;"></div>
+    <div style="font-weight: bold; text-decoration: underline;">( .................................................. )</div>
+    <div>NIP. .................................................</div>
+  </div>
+
+</body>
+</html>

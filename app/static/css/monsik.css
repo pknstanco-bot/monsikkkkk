@@ -1,0 +1,287 @@
+:root {
+  --navy-dark: #071325;
+  --navy-card: #0d213f;
+  --navy-light: #163660;
+  --primary: #2563eb;
+  --primary-hover: #1d4ed8;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #06b6d4;
+  --purple: #8b5cf6;
+  --bg-main: #f4f6fa;
+  --surface: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #64748b;
+  --border-color: #e2e8f0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-main);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Header Banner - Matches PayTrack Design */
+.monsik-header-banner {
+  background: linear-gradient(135deg, #071325 0%, #0a1e38 50%, #0f2d57 100%);
+  color: #ffffff;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.monsik-navbar {
+  padding: 0.45rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.brand-badge-sm {
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  color: #fff;
+  padding: 0.22rem 0.55rem;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.brand-title-sm {
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+}
+
+.nav-link-monsik {
+  color: #94a3b8 !important;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.65rem !important;
+  border-radius: 6px;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: all 0.15s ease;
+}
+
+.nav-link-monsik:hover, .nav-link-monsik.active {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.avatar-circle-sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.status-ribbon {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(8px);
+  border-radius: 30px;
+  padding: 0.4rem 1.25rem;
+  font-size: 0.78rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: inline-flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 4px;
+}
+.status-dot.green { background-color: #10b981; box-shadow: 0 0 8px #10b981; }
+.status-dot.blue { background-color: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+.status-dot.amber { background-color: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+
+/* Metrics Cards in Navy Header */
+.metric-card-header {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  padding: 1.15rem 1.35rem;
+  color: #ffffff;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.metric-card-header:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.metric-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.metric-value {
+  font-size: 1.55rem;
+  font-weight: 700;
+  margin-top: 0.4rem;
+  margin-bottom: 0.25rem;
+  color: #ffffff;
+}
+
+.metric-trend {
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.trend-up { color: #34d399; background: rgba(52, 211, 153, 0.15); }
+.trend-down { color: #f87171; background: rgba(248, 113, 113, 0.15); }
+.trend-neutral { color: #94a3b8; background: rgba(148, 163, 184, 0.15); }
+
+/* Main Content Area */
+.monsik-main-container {
+  margin-top: -1rem;
+  padding-bottom: 3rem;
+}
+
+.card-monsik {
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.03);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.card-monsik-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #ffffff;
+}
+
+.card-title-monsik {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.card-monsik-body {
+  padding: 1.5rem;
+}
+
+/* Status Badges */
+.badge-status {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 30px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge-outstanding {
+  background-color: #fee2e2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+}
+
+.badge-cair-sebagian {
+  background-color: #fef3c7;
+  color: #b45309;
+  border: 1px solid #fde68a;
+}
+
+.badge-cair-penuh {
+  background-color: #d1fae5;
+  color: #047857;
+  border: 1px solid #a7f3d0;
+}
+
+.badge-lpj-selesai {
+  background-color: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #c7d2fe;
+}
+
+.badge-lpj-pending {
+  background-color: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+/* Custom Table Styles */
+.table-monsik {
+  width: 100%;
+  margin-bottom: 0;
+  vertical-align: middle;
+}
+
+.table-monsik th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.table-monsik td {
+  padding: 0.95rem 1rem;
+  font-size: 0.88rem;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.table-monsik tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* User Avatar */
+.avatar-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 992px) {
+  .status-ribbon {
+    display: none;
+  }
+}
